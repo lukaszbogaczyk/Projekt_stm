@@ -198,9 +198,11 @@ int main(void)
 	PID1.prev_error = 0;
 	PID1.prev_u_I = 0;
 
+	lcd_init();
 	lcd_clear();
 	lcd_put_cur(0, 0);
-	lcd_send_string("LCD Ready");
+	Test_LCD_Communication();
+	char buffer;
 
 
 
@@ -209,10 +211,13 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 	while (1) {
-
 		/* Reads temperature. */
 		temperature = BMP180_GetRawTemperature();
 
+
+		sprintf(buffer, "%.2f", temperature);  // Zaokrąglenie do 2 miejsc po przecinku
+		lcd_put_cur(0, 0);
+		lcd_send_string (buffer);
 		HAL_Delay(1000);
 
 
