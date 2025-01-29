@@ -81,6 +81,37 @@ static void MX_USART2_UART_Init(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
+struct Controller{
+	float Kp;
+	float Ki;
+	float Kd;
+	float Tp;
+	float prev_error;
+	float prev_u_I;
+
+};
+
+float calculate_PID(struct Controller *PID, float referncyjna, float zmierzona){
+	float u = 0;
+	float error;
+	float u_P, u_I , u_D;
+
+	error = referncyjna - zmierzona;
+
+	u_P = PID->Kp * error;
+
+	if(error<1) u_I = PID->Ki * PID->Tp / 2.0 * (error + PID->prev_error) + PID->prev_u_I;
+	PID->prev_u_I = u_I;
+	u_D = (error - PID->prev_error) / PID->Tp;
+
+	PID->prev_error = error;
+
+	u = u_P + u_I + u_D;
+	return u;
+}
+
+struct Controller PID1;
+
 
 
 /* USER CODE END 0 */
@@ -124,6 +155,12 @@ int main(void)
   MX_I2C2_Init();
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
+  PID1.Kp = 3.390911355021315;
+  PID1.Ki = 0.000304836913931922;
+  PID1.Kd = 3.3740543505038;
+  PID1.Tp = 1;
+  PID1.prev_error = 0;
+  PID1.prev_u_I = 0;
 
 
   /* USER CODE END 2 */
