@@ -61,6 +61,9 @@ PCD_HandleTypeDef hpcd_USB_OTG_FS;
 
 /* USER CODE BEGIN PV */
 
+float temp_zadana=25;
+float temperature;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -156,12 +159,21 @@ int main(void)
   MX_I2C2_Init();
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
-  PID1.Kp = 3.390911355021315;
-  PID1.Ki = 0.000304836913931922;
-  PID1.Kd = 3.3740543505038;
-  PID1.Tp = 1;
-  PID1.prev_error = 0;
-  PID1.prev_u_I = 0;
+
+	/* Initializes BMP180 sensor and oversampling settings. */
+	BMP180_Init(&hi2c1);
+	BMP180_SetOversampling(BMP180_ULTRA);
+	/* Update calibration data. Must be called once before entering main loop. */
+	BMP180_UpdateCalibrationData();
+
+
+	PID1.Kp = 3.390911355021315;
+	PID1.Ki = 0.000304836913931922;
+	PID1.Kd = 3.3740543505038;
+	PID1.Tp = 1;
+	PID1.prev_error = 0;
+	PID1.prev_u_I = 0;
+
 
 
   /* USER CODE END 2 */
@@ -169,6 +181,11 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 	while (1) {
+
+		/* Reads temperature. */
+		temperature = BMP180_GetRawTemperature();
+
+		HAL_Delay(1000);
 
 
 
