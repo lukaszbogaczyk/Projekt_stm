@@ -64,6 +64,8 @@ PCD_HandleTypeDef hpcd_USB_OTG_FS;
 
 float temp_zadana=25;
 float temperature;
+float pwm_duty_f;
+uint16_t pwm_duty_u = 0;
 
 /* USER CODE END PV */
 
@@ -85,6 +87,25 @@ static void MX_USART2_UART_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+
+void Test_LCD_Communication(void) {
+    HAL_StatusTypeDef status;
+    char msg[64];
+
+    // Test komendy LCD
+    uint8_t test_data[4] = {0x00, 0x00, 0x01, 0x01};  // Przykładowe dane do transmisji
+
+    status = HAL_I2C_Master_Transmit(&hi2c4, 0x27<<1, &test_data, 4, 50000);
+    if (status == HAL_OK) {
+        snprintf(msg, sizeof(msg), "Komunikacja OK z adresem: 0x%02X\r\n", 0x27);
+    } else if (status == HAL_BUSY) {
+        snprintf(msg, sizeof(msg), "I2C Busy! Adres: 0x%02X\r\n", 0x27);
+    } else if (status == HAL_ERROR) {
+        snprintf(msg, sizeof(msg), "Blad komunikacji! Adres: 0x%02X\r\n", 0x27);
+    } else if (status == HAL_TIMEOUT) {
+        snprintf(msg, sizeof(msg), "Timeout! Adres: 0x%02X\r\n", 0x27);
+    }
+}
 
 struct Controller{
 	float Kp;
@@ -160,6 +181,8 @@ int main(void)
   MX_I2C2_Init();
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
+	HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
+	HAL_TIM_Base_Start_IT(&htim7);
 
 	/* Initializes BMP180 sensor and oversampling settings. */
 	BMP180_Init(&hi2c1);
@@ -705,6 +728,19 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
+	if(htim->Instance == TIM7){
+        pwm_duty_f = (htim2.Init.Period * calculate_PID(&PID1, temp_zadana, temperature));
+
+                // Saturation
+                if(pwm_duty_f < 0.0) pwm_duty_u = 0;
+                else if(pwm_duty_f > htim2.Init.Period) pwm_duty_u = htim2.Init.Period;
+                else pwm_duty_u = (uint16_t) pwm_duty_f;
+
+                __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, pwm_duty_u);
+	}
+}
 
 
 /* USER CODE END 4 */
