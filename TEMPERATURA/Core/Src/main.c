@@ -66,6 +66,10 @@ float temp_zadana=25;
 float temperature;
 float pwm_duty_f;
 uint16_t pwm_duty_u = 0;
+char rx_buffer[64];
+uint8_t rx_index=0;
+uint8_t rx_data;
+float wypelnienie = 0;
 
 /* USER CODE END PV */
 
@@ -204,6 +208,11 @@ int main(void)
 	Test_LCD_Communication();
 	char buffer;
 
+	HAL_UART_Receive_IT(&huart3, &rx_data, 1);
+	rx_buffer[0] = '2';
+	rx_buffer[1] = '5';
+	rx_buffer[2] = '\0';
+
 
 
   /* USER CODE END 2 */
@@ -214,13 +223,22 @@ int main(void)
 		/* Reads temperature. */
 		temperature = BMP180_GetRawTemperature();
 
-
 		sprintf(buffer, "%.2f", temperature);  // Zaokrąglenie do 2 miejsc po przecinku
 		lcd_put_cur(0, 0);
 		lcd_send_string (buffer);
 		HAL_Delay(1000);
 
+		temp_zadana=strtof(rx_buffer,NULL);
+		wypelnienie = (float)((float)TIM2->CCR1 / (float)TIM2->ARR) * 100;
 
+		char buffer5[64];
+		char buffer6[64];
+
+		snprintf(buffer5,sizeof(buffer5),"%.2f|%.2f\n",temp_zadana, temperature);
+		snprintf(buffer6,sizeof(buffer6),"%.2f\n",wypelnienie);
+
+		HAL_UART_Transmit(&huart3,(uint8_t *)buffer5,strlen(buffer5),10);
+		HAL_UART_Transmit(&huart3,(uint8_t *)buffer6,strlen(buffer6),10);
 
 
     /* USER CODE END WHILE */
@@ -747,6 +765,19 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 	}
 }
 
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
+    if (huart->Instance == USART3) {
+        if (rx_data == '\n') {
+            rx_buffer[rx_index] = '\0'; // znak końca stringa
+            rx_index = 0;
+        } else {
+            if (rx_index < 64 - 1) {
+                rx_buffer[rx_index++] = rx_data;
+            }
+        }
+        HAL_UART_Receive_IT(&huart3, &rx_data, 1);
+    }
+}
 
 /* USER CODE END 4 */
 
