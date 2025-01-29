@@ -25,6 +25,7 @@
 #include "stdlib.h"
 #include "string.h"
 #include "bmp180_for_stm32_hal.h"
+#include "i2c-lcd.h"
 
 /* USER CODE END Includes */
 
@@ -173,6 +174,10 @@ int main(void)
 	PID1.Tp = 1;
 	PID1.prev_error = 0;
 	PID1.prev_u_I = 0;
+
+	lcd_clear();
+	lcd_put_cur(0, 0);
+	lcd_send_string("LCD Ready");
 
 
 
